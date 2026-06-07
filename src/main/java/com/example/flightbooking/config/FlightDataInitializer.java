@@ -2,12 +2,18 @@ package com.example.flightbooking.config;
 
 import com.example.flightbooking.model.Flight;
 import com.example.flightbooking.repository.InMemoryFlightRepository;
+import java.time.Clock;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class FlightDataInitializer {
+
+    @Bean
+    Clock bookingClock() {
+        return Clock.systemUTC();
+    }
 
     @Bean
     CommandLineRunner initializeFlights(InMemoryFlightRepository flightRepository) {

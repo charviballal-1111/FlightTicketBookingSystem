@@ -20,4 +20,13 @@ public record BookingRequest(
         @Min(value = 1, message = "seatCount must be at least 1")
         Integer seatCount
 ) {
+    public BookingRequest {
+        flightNumber = trimToNullSafeValue(flightNumber);
+        passengerName = trimToNullSafeValue(passengerName);
+        passengerEmail = trimToNullSafeValue(passengerEmail);
+    }
+
+    private static String trimToNullSafeValue(String value) {
+        return value == null ? null : value.trim();
+    }
 }

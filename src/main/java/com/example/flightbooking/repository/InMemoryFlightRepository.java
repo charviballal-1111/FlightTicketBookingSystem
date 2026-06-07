@@ -18,7 +18,10 @@ public class InMemoryFlightRepository {
     }
 
     public Optional<Flight> findByFlightNumber(String flightNumber) {
-        return Optional.ofNullable(flights.get(flightNumber));
+        if (flightNumber == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(flights.get(flightNumber.trim()));
     }
 
     public Collection<Flight> findAll() {

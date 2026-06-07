@@ -18,11 +18,7 @@ public class BookingService {
     private final InMemoryFlightRepository flightRepository;
     private final Clock clock;
 
-    public BookingService(InMemoryFlightRepository flightRepository) {
-        this(flightRepository, Clock.systemUTC());
-    }
-
-    BookingService(InMemoryFlightRepository flightRepository, Clock clock) {
+    public BookingService(InMemoryFlightRepository flightRepository, Clock clock) {
         this.flightRepository = flightRepository;
         this.clock = clock;
     }
@@ -31,12 +27,12 @@ public class BookingService {
         Flight flight = flightRepository.findByFlightNumber(request.flightNumber())
                 .orElseThrow(() -> new FlightNotFoundException(request.flightNumber()));
 
-        boolean reserved = flight.reserveSeats(request.seatCount());
-        if (!reserved) {
+        Flight.ReservationResult reservation = flight.reserveSeats(request.seatCount());
+        if (!reservation.accepted()) {
             throw new NotEnoughSeatsException(
                     flight.getFlightNumber(),
                     request.seatCount(),
-                    flight.getRemainingSeats()
+                    reservation.remainingSeats()
             );
         }
 
@@ -55,7 +51,7 @@ public class BookingService {
                 booking.passengerName(),
                 booking.passengerEmail(),
                 booking.seatCount(),
-                flight.getRemainingSeats(),
+                reservation.remainingSeats(),
                 booking.confirmedAt()
         );
     }

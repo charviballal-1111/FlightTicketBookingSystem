@@ -73,7 +73,7 @@ Not enough seats response: `409 Conflict`
   "timestamp": "2026-06-07T08:00:00Z",
   "status": 409,
   "error": "Conflict",
-  "message": "Flight AI101 has only 1 seats remaining; requested 2",
+  "message": "Flight AI101 has only 1 seat remaining; requested 2 seats",
   "path": "/bookings",
   "details": []
 }

@@ -79,7 +79,7 @@ class BookingServiceTest {
                 3
         )))
                 .isInstanceOf(NotEnoughSeatsException.class)
-                .hasMessage("Flight AI101 has only 2 seats remaining; requested 3");
+                .hasMessage("Flight AI101 has only 2 seats remaining; requested 3 seats");
 
         assertThat(repository.findByFlightNumber("AI101").orElseThrow().getBookedSeats()).isZero();
     }

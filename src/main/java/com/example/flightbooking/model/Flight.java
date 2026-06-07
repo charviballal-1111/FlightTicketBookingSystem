@@ -13,7 +13,7 @@ public class Flight {
         if (capacity < 1) {
             throw new IllegalArgumentException("capacity must be at least 1");
         }
-        this.flightNumber = flightNumber;
+        this.flightNumber = flightNumber.trim();
         this.capacity = capacity;
     }
 
@@ -33,14 +33,26 @@ public class Flight {
         return capacity - bookedSeats;
     }
 
-    public synchronized boolean reserveSeats(int seatCount) {
+    public synchronized ReservationResult reserveSeats(int seatCount) {
         if (seatCount < 1) {
             throw new IllegalArgumentException("seatCount must be at least 1");
         }
-        if (seatCount > getRemainingSeats()) {
-            return false;
+        int remainingSeats = capacity - bookedSeats;
+        if (seatCount > remainingSeats) {
+            return ReservationResult.rejected(remainingSeats);
         }
         bookedSeats += seatCount;
-        return true;
+        return ReservationResult.accepted(capacity - bookedSeats);
+    }
+
+    public record ReservationResult(boolean accepted, int remainingSeats) {
+
+        static ReservationResult accepted(int remainingSeats) {
+            return new ReservationResult(true, remainingSeats);
+        }
+
+        static ReservationResult rejected(int remainingSeats) {
+            return new ReservationResult(false, remainingSeats);
+        }
     }
 }

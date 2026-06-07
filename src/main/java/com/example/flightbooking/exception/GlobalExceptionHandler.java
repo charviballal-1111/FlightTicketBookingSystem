@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -58,6 +59,20 @@ public class GlobalExceptionHandler {
                 "Request validation failed",
                 request.getRequestURI(),
                 details
+        );
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleUnreadableRequest(
+            HttpMessageNotReadableException exception,
+            HttpServletRequest request
+    ) {
+        ErrorResponse response = ErrorResponse.of(
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                "Request body is missing or malformed",
+                request.getRequestURI()
         );
         return ResponseEntity.badRequest().body(response);
     }
