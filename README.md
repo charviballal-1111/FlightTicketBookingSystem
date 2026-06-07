@@ -78,3 +78,16 @@ Not enough seats response: `409 Conflict`
   "details": []
 }
 ```
+
+Duplicate passenger email response: `400 Bad Request`
+
+```json
+{
+  "timestamp": "2026-06-07T08:00:00Z",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Passenger with email asha@example.com already has a booking",
+  "path": "/bookings",
+  "details": []
+}
+```

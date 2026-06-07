@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.example.flightbooking.dto.BookingRequest;
 import com.example.flightbooking.exception.GlobalExceptionHandler;
 import com.example.flightbooking.model.Flight;
+import com.example.flightbooking.repository.InMemoryBookingRepository;
 import com.example.flightbooking.repository.InMemoryFlightRepository;
 import com.example.flightbooking.service.BookingService;
 import java.time.Clock;
@@ -29,7 +30,11 @@ class BookingControllerTest {
     void setUp() {
         InMemoryFlightRepository repository = new InMemoryFlightRepository();
         repository.save(new Flight("AI101", 4));
-        BookingService bookingService = new BookingService(repository, Clock.systemUTC());
+        BookingService bookingService = new BookingService(
+                repository,
+                new InMemoryBookingRepository(),
+                Clock.systemUTC()
+        );
         LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
         validator.afterPropertiesSet();
 
@@ -85,6 +90,31 @@ class BookingControllerTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message")
                         .value("Flight AI101 has only 4 seats remaining; requested 5 seats"));
+    }
+
+    @Test
+    void returnsBadRequestWhenPassengerEmailAlreadyBooked() throws Exception {
+        mockMvc.perform(post("/bookings")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new BookingRequest(
+                                "AI101",
+                                "Asha Rao",
+                                "asha@example.com",
+                                1
+                        ))))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/bookings")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new BookingRequest(
+                                "AI101",
+                                "Asha Rao",
+                                "asha@example.com",
+                                1
+                        ))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message")
+                        .value("Passenger with email asha@example.com already has a booking"));
     }
 
     @Test

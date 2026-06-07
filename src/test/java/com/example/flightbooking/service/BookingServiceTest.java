@@ -5,9 +5,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.example.flightbooking.dto.BookingRequest;
 import com.example.flightbooking.dto.BookingResponse;
+import com.example.flightbooking.exception.DuplicatePassengerEmailException;
 import com.example.flightbooking.exception.FlightNotFoundException;
 import com.example.flightbooking.exception.NotEnoughSeatsException;
 import com.example.flightbooking.model.Flight;
+import com.example.flightbooking.repository.InMemoryBookingRepository;
 import com.example.flightbooking.repository.InMemoryFlightRepository;
 import java.time.Clock;
 import java.time.Instant;
@@ -33,7 +35,8 @@ class BookingServiceTest {
     void booksSeatsSuccessfully() {
         InMemoryFlightRepository repository = new InMemoryFlightRepository();
         repository.save(new Flight("AI101", 5));
-        BookingService service = new BookingService(repository, FIXED_CLOCK);
+        InMemoryBookingRepository bookingRepository = new InMemoryBookingRepository();
+        BookingService service = new BookingService(repository, bookingRepository, FIXED_CLOCK);
 
         BookingResponse response = service.bookSeats(new BookingRequest(
                 "AI101",
@@ -49,12 +52,17 @@ class BookingServiceTest {
         assertThat(response.seatsBooked()).isEqualTo(2);
         assertThat(response.remainingSeats()).isEqualTo(3);
         assertThat(response.confirmedAt()).isEqualTo(FIXED_CLOCK.instant());
+        assertThat(bookingRepository.findByPassengerEmail("ASHA@example.com")).isPresent();
         assertThat(repository.findByFlightNumber("AI101").orElseThrow().getBookedSeats()).isEqualTo(2);
     }
 
     @Test
     void rejectsBookingForUnknownFlight() {
-        BookingService service = new BookingService(new InMemoryFlightRepository(), FIXED_CLOCK);
+        BookingService service = new BookingService(
+                new InMemoryFlightRepository(),
+                new InMemoryBookingRepository(),
+                FIXED_CLOCK
+        );
 
         assertThatThrownBy(() -> service.bookSeats(new BookingRequest(
                 "ZZ999",
@@ -70,7 +78,11 @@ class BookingServiceTest {
     void rejectsOverbooking() {
         InMemoryFlightRepository repository = new InMemoryFlightRepository();
         repository.save(new Flight("AI101", 2));
-        BookingService service = new BookingService(repository, FIXED_CLOCK);
+        BookingService service = new BookingService(
+                repository,
+                new InMemoryBookingRepository(),
+                FIXED_CLOCK
+        );
 
         assertThatThrownBy(() -> service.bookSeats(new BookingRequest(
                 "AI101",
@@ -85,18 +97,52 @@ class BookingServiceTest {
     }
 
     @Test
+    void rejectsDuplicatePassengerEmailWithoutReservingMoreSeats() {
+        InMemoryFlightRepository repository = new InMemoryFlightRepository();
+        repository.save(new Flight("AI101", 5));
+        BookingService service = new BookingService(
+                repository,
+                new InMemoryBookingRepository(),
+                FIXED_CLOCK
+        );
+
+        service.bookSeats(new BookingRequest(
+                "AI101",
+                "Asha Rao",
+                "asha@example.com",
+                2
+        ));
+
+        assertThatThrownBy(() -> service.bookSeats(new BookingRequest(
+                "AI101",
+                "Asha Rao",
+                "ASHA@example.com",
+                1
+        )))
+                .isInstanceOf(DuplicatePassengerEmailException.class)
+                .hasMessage("Passenger with email ASHA@example.com already has a booking");
+
+        assertThat(repository.findByFlightNumber("AI101").orElseThrow().getBookedSeats()).isEqualTo(2);
+    }
+
+    @Test
     void concurrentBookingsCannotExceedCapacity() throws Exception {
         int capacity = 20;
         int attempts = 100;
         InMemoryFlightRepository repository = new InMemoryFlightRepository();
         repository.save(new Flight("AI101", capacity));
-        BookingService service = new BookingService(repository, FIXED_CLOCK);
+        BookingService service = new BookingService(
+                repository,
+                new InMemoryBookingRepository(),
+                FIXED_CLOCK
+        );
         ExecutorService executor = Executors.newFixedThreadPool(attempts);
         CountDownLatch ready = new CountDownLatch(attempts);
         CountDownLatch start = new CountDownLatch(1);
         List<Callable<Boolean>> tasks = new ArrayList<>();
 
         for (int i = 0; i < attempts; i++) {
+            int passengerNumber = i;
             tasks.add(() -> {
                 ready.countDown();
                 start.await();
@@ -104,7 +150,7 @@ class BookingServiceTest {
                     service.bookSeats(new BookingRequest(
                             "AI101",
                             "Passenger",
-                            "passenger@example.com",
+                            "passenger-" + passengerNumber + "@example.com",
                             1
                     ));
                     return true;
@@ -133,5 +179,59 @@ class BookingServiceTest {
         assertThat(successfulBookings).isEqualTo(capacity);
         assertThat(flight.getBookedSeats()).isEqualTo(capacity);
         assertThat(flight.getRemainingSeats()).isZero();
+    }
+
+    @Test
+    void concurrentBookingsWithSameEmailOnlyBookOnce() throws Exception {
+        int attempts = 20;
+        InMemoryFlightRepository repository = new InMemoryFlightRepository();
+        repository.save(new Flight("AI101", attempts));
+        BookingService service = new BookingService(
+                repository,
+                new InMemoryBookingRepository(),
+                FIXED_CLOCK
+        );
+        ExecutorService executor = Executors.newFixedThreadPool(attempts);
+        CountDownLatch ready = new CountDownLatch(attempts);
+        CountDownLatch start = new CountDownLatch(1);
+        List<Callable<Boolean>> tasks = new ArrayList<>();
+
+        for (int i = 0; i < attempts; i++) {
+            tasks.add(() -> {
+                ready.countDown();
+                start.await();
+                try {
+                    service.bookSeats(new BookingRequest(
+                            "AI101",
+                            "Passenger",
+                            "passenger@example.com",
+                            1
+                    ));
+                    return true;
+                } catch (DuplicatePassengerEmailException exception) {
+                    return false;
+                }
+            });
+        }
+
+        List<Future<Boolean>> futures = tasks.stream()
+                .map(executor::submit)
+                .toList();
+        assertThat(ready.await(5, TimeUnit.SECONDS)).isTrue();
+        start.countDown();
+
+        int successfulBookings = 0;
+        for (Future<Boolean> future : futures) {
+            if (future.get(5, TimeUnit.SECONDS)) {
+                successfulBookings++;
+            }
+        }
+        executor.shutdown();
+        assertThat(executor.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
+
+        Flight flight = repository.findByFlightNumber("AI101").orElseThrow();
+        assertThat(successfulBookings).isEqualTo(1);
+        assertThat(flight.getBookedSeats()).isEqualTo(1);
+        assertThat(flight.getRemainingSeats()).isEqualTo(attempts - 1);
     }
 }
