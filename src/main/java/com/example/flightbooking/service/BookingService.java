@@ -1,3 +1,11 @@
+/******************************************************************************
+Copyright (c) 2026
+SOFTWARE     : Flight Ticket Booking System
+FILENAME     : BookingService.java
+DESCRIPTION  : Class to coordinate booking validation and seat reservation
+Date         : 07/06/2026
+Author       : @charviballal
+********************************************************************************/
 package com.example.flightbooking.service;
 
 import com.example.flightbooking.dto.BookingRequest;
@@ -21,6 +29,15 @@ public class BookingService {
     private final InMemoryBookingRepository bookingRepository;
     private final Clock clock;
 
+    /**
+     *
+     * This constructor creates the booking service with flight storage, booking
+     * storage, and clock dependencies.
+     *
+     * @param flightRepository the repository used to find flights
+     * @param bookingRepository the repository used to track passenger bookings
+     * @param clock the clock used to timestamp confirmations
+     */
     public BookingService(
             InMemoryFlightRepository flightRepository,
             InMemoryBookingRepository bookingRepository,
@@ -31,6 +48,14 @@ public class BookingService {
         this.clock = clock;
     }
 
+    /**
+     *
+     * This method books seats for a passenger after validating flight
+     * availability and duplicate passenger email rules.
+     *
+     * @param request the booking request submitted by the client
+     * @return the confirmed booking response
+     */
     public BookingResponse bookSeats(BookingRequest request) {
         Flight flight = flightRepository.findByFlightNumber(request.flightNumber())
                 .orElseThrow(() -> new FlightNotFoundException(request.flightNumber()));

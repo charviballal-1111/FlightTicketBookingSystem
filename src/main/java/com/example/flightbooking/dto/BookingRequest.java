@@ -1,3 +1,11 @@
+/******************************************************************************
+Copyright (c) 2026
+SOFTWARE     : Flight Ticket Booking System
+FILENAME     : BookingRequest.java
+DESCRIPTION  : Record to define booking request payload fields
+Date         : 07/06/2026
+Author       : @charviballal
+********************************************************************************/
 package com.example.flightbooking.dto;
 
 import jakarta.validation.constraints.Email;
@@ -20,12 +28,24 @@ public record BookingRequest(
         @Min(value = 1, message = "seatCount must be at least 1")
         Integer seatCount
 ) {
+    /**
+     *
+     * This compact constructor trims incoming string fields before validation
+     * and booking processing.
+     */
     public BookingRequest {
         flightNumber = trimToNullSafeValue(flightNumber);
         passengerName = trimToNullSafeValue(passengerName);
         passengerEmail = trimToNullSafeValue(passengerEmail);
     }
 
+    /**
+     *
+     * This method trims a string value while preserving null inputs.
+     *
+     * @param value the value to trim
+     * @return the trimmed value or null
+     */
     private static String trimToNullSafeValue(String value) {
         return value == null ? null : value.trim();
     }

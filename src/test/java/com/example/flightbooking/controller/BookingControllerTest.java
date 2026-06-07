@@ -1,3 +1,11 @@
+/******************************************************************************
+Copyright (c) 2026
+SOFTWARE     : Flight Ticket Booking System
+FILENAME     : BookingControllerTest.java
+DESCRIPTION  : Class to test booking controller HTTP behavior
+Date         : 07/06/2026
+Author       : @charviballal
+********************************************************************************/
 package com.example.flightbooking.controller;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -26,6 +34,11 @@ class BookingControllerTest {
 
     private MockMvc mockMvc;
 
+    /**
+     *
+     * This method prepares the standalone MVC test environment before each
+     * controller test.
+     */
     @BeforeEach
     void setUp() {
         InMemoryFlightRepository repository = new InMemoryFlightRepository();
@@ -45,6 +58,13 @@ class BookingControllerTest {
                 .build();
     }
 
+    /**
+     *
+     * This method verifies that a valid booking request returns HTTP 201 and
+     * the expected response body.
+     *
+     * @throws Exception when MVC request execution fails
+     */
     @Test
     void createsBookingWithHttpCreated() throws Exception {
         mockMvc.perform(post("/bookings")
@@ -63,6 +83,13 @@ class BookingControllerTest {
                 .andExpect(jsonPath("$.remainingSeats").value(2));
     }
 
+    /**
+     *
+     * This method verifies that an unknown flight returns HTTP 404 with error
+     * details.
+     *
+     * @throws Exception when MVC request execution fails
+     */
     @Test
     void returnsNotFoundForUnknownFlight() throws Exception {
         mockMvc.perform(post("/bookings")
@@ -79,6 +106,13 @@ class BookingControllerTest {
                         .exists());
     }
 
+    /**
+     *
+     * This method verifies that unavailable seats return HTTP 409 with error
+     * details.
+     *
+     * @throws Exception when MVC request execution fails
+     */
     @Test
     void returnsConflictWhenSeatsAreUnavailable() throws Exception {
         mockMvc.perform(post("/bookings")
@@ -96,6 +130,13 @@ class BookingControllerTest {
                         .exists());
     }
 
+    /**
+     *
+     * This method verifies that duplicate passenger emails return HTTP 400 with
+     * error details.
+     *
+     * @throws Exception when MVC request execution fails
+     */
     @Test
     void returnsBadRequestWhenPassengerEmailAlreadyBooked() throws Exception {
         mockMvc.perform(post("/bookings")
@@ -123,6 +164,13 @@ class BookingControllerTest {
                         .exists());
     }
 
+    /**
+     *
+     * This method verifies that invalid request fields return HTTP 400 with
+     * validation details.
+     *
+     * @throws Exception when MVC request execution fails
+     */
     @Test
     void returnsBadRequestForInvalidRequest() throws Exception {
         mockMvc.perform(post("/bookings")
@@ -141,6 +189,13 @@ class BookingControllerTest {
                 .andExpect(jsonPath("$.details[?(@ == 'seatCount: seatCount must be at least 1')]").exists());
     }
 
+    /**
+     *
+     * This method verifies that malformed JSON returns HTTP 400 with request
+     * body details.
+     *
+     * @throws Exception when MVC request execution fails
+     */
     @Test
     void returnsBadRequestForMalformedJson() throws Exception {
         mockMvc.perform(post("/bookings")

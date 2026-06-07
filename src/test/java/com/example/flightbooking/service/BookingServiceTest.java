@@ -1,3 +1,11 @@
+/******************************************************************************
+Copyright (c) 2026
+SOFTWARE     : Flight Ticket Booking System
+FILENAME     : BookingServiceTest.java
+DESCRIPTION  : Class to test booking service business behavior
+Date         : 07/06/2026
+Author       : @charviballal
+********************************************************************************/
 package com.example.flightbooking.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,6 +39,11 @@ class BookingServiceTest {
             ZoneOffset.UTC
     );
 
+    /**
+     *
+     * This method verifies that a valid request books seats and returns the
+     * expected booking response.
+     */
     @Test
     void booksSeatsSuccessfully() {
         InMemoryFlightRepository repository = new InMemoryFlightRepository();
@@ -56,6 +69,11 @@ class BookingServiceTest {
         assertThat(repository.findByFlightNumber("AI101").orElseThrow().getBookedSeats()).isEqualTo(2);
     }
 
+    /**
+     *
+     * This method verifies that booking an unknown flight raises the expected
+     * flight not found exception.
+     */
     @Test
     void rejectsBookingForUnknownFlight() {
         BookingService service = new BookingService(
@@ -74,6 +92,11 @@ class BookingServiceTest {
                 .hasMessage("Flight ZZ999 does not exist");
     }
 
+    /**
+     *
+     * This method verifies that overbooking raises the expected exception and
+     * does not reserve seats.
+     */
     @Test
     void rejectsOverbooking() {
         InMemoryFlightRepository repository = new InMemoryFlightRepository();
@@ -96,6 +119,11 @@ class BookingServiceTest {
         assertThat(repository.findByFlightNumber("AI101").orElseThrow().getBookedSeats()).isZero();
     }
 
+    /**
+     *
+     * This method verifies that duplicate passenger emails are rejected without
+     * reserving additional seats.
+     */
     @Test
     void rejectsDuplicatePassengerEmailWithoutReservingMoreSeats() {
         InMemoryFlightRepository repository = new InMemoryFlightRepository();
@@ -125,6 +153,13 @@ class BookingServiceTest {
         assertThat(repository.findByFlightNumber("AI101").orElseThrow().getBookedSeats()).isEqualTo(2);
     }
 
+    /**
+     *
+     * This method verifies that concurrent booking attempts cannot reserve more
+     * seats than the flight capacity.
+     *
+     * @throws Exception when concurrent execution fails
+     */
     @Test
     void concurrentBookingsCannotExceedCapacity() throws Exception {
         int capacity = 20;
@@ -181,6 +216,13 @@ class BookingServiceTest {
         assertThat(flight.getRemainingSeats()).isZero();
     }
 
+    /**
+     *
+     * This method verifies that concurrent booking attempts with the same email
+     * create only one booking.
+     *
+     * @throws Exception when concurrent execution fails
+     */
     @Test
     void concurrentBookingsWithSameEmailOnlyBookOnce() throws Exception {
         int attempts = 20;
