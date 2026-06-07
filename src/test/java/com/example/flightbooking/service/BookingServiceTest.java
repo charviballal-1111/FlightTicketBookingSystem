@@ -19,6 +19,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 
 class BookingServiceTest {
@@ -90,7 +91,7 @@ class BookingServiceTest {
         InMemoryFlightRepository repository = new InMemoryFlightRepository();
         repository.save(new Flight("AI101", capacity));
         BookingService service = new BookingService(repository, FIXED_CLOCK);
-        ExecutorService executor = Executors.newFixedThreadPool(16);
+        ExecutorService executor = Executors.newFixedThreadPool(attempts);
         CountDownLatch ready = new CountDownLatch(attempts);
         CountDownLatch start = new CountDownLatch(1);
         List<Callable<Boolean>> tasks = new ArrayList<>();
@@ -116,16 +117,17 @@ class BookingServiceTest {
         List<Future<Boolean>> futures = tasks.stream()
                 .map(executor::submit)
                 .toList();
-        ready.await();
+        assertThat(ready.await(5, TimeUnit.SECONDS)).isTrue();
         start.countDown();
 
         int successfulBookings = 0;
         for (Future<Boolean> future : futures) {
-            if (future.get()) {
+            if (future.get(5, TimeUnit.SECONDS)) {
                 successfulBookings++;
             }
         }
-        executor.shutdownNow();
+        executor.shutdown();
+        assertThat(executor.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
 
         Flight flight = repository.findByFlightNumber("AI101").orElseThrow();
         assertThat(successfulBookings).isEqualTo(capacity);
