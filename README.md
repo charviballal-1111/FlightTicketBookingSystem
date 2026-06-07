@@ -62,7 +62,9 @@ Unknown flight response: `404 Not Found`
   "error": "Not Found",
   "message": "Flight ZZ999 does not exist",
   "path": "/bookings",
-  "details": []
+  "details": [
+    "flightNumber: Flight ZZ999 does not exist"
+  ]
 }
 ```
 
@@ -75,7 +77,9 @@ Not enough seats response: `409 Conflict`
   "error": "Conflict",
   "message": "Flight AI101 has only 1 seat remaining; requested 2 seats",
   "path": "/bookings",
-  "details": []
+  "details": [
+    "seatCount: Flight AI101 has only 1 seat remaining; requested 2 seats"
+  ]
 }
 ```
 
@@ -88,6 +92,8 @@ Duplicate passenger email response: `400 Bad Request`
   "error": "Bad Request",
   "message": "Passenger with email asha@example.com already has a booking",
   "path": "/bookings",
-  "details": []
+  "details": [
+    "passengerEmail: Passenger with email asha@example.com already has a booking"
+  ]
 }
 ```

@@ -74,7 +74,9 @@ class BookingControllerTest {
                                 1
                         ))))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("Flight ZZ999 does not exist"));
+                .andExpect(jsonPath("$.message").value("Flight ZZ999 does not exist"))
+                .andExpect(jsonPath("$.details[?(@ == 'flightNumber: Flight ZZ999 does not exist')]")
+                        .exists());
     }
 
     @Test
@@ -89,7 +91,9 @@ class BookingControllerTest {
                         ))))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message")
-                        .value("Flight AI101 has only 4 seats remaining; requested 5 seats"));
+                        .value("Flight AI101 has only 4 seats remaining; requested 5 seats"))
+                .andExpect(jsonPath("$.details[?(@ == 'seatCount: Flight AI101 has only 4 seats remaining; requested 5 seats')]")
+                        .exists());
     }
 
     @Test
@@ -114,7 +118,9 @@ class BookingControllerTest {
                         ))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message")
-                        .value("Passenger with email asha@example.com already has a booking"));
+                        .value("Passenger with email asha@example.com already has a booking"))
+                .andExpect(jsonPath("$.details[?(@ == 'passengerEmail: Passenger with email asha@example.com already has a booking')]")
+                        .exists());
     }
 
     @Test
@@ -141,6 +147,8 @@ class BookingControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{not-json"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Request body is missing or malformed"));
+                .andExpect(jsonPath("$.message").value("Request body is missing or malformed"))
+                .andExpect(jsonPath("$.details[?(@ == 'requestBody: Request body is missing or malformed')]")
+                        .exists());
     }
 }

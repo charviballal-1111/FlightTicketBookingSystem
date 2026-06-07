@@ -19,11 +19,12 @@ public class GlobalExceptionHandler {
             FlightNotFoundException exception,
             HttpServletRequest request
     ) {
-        ErrorResponse response = ErrorResponse.of(
+        ErrorResponse response = ErrorResponse.withDetails(
                 HttpStatus.NOT_FOUND.value(),
                 HttpStatus.NOT_FOUND.getReasonPhrase(),
                 exception.getMessage(),
-                request.getRequestURI()
+                request.getRequestURI(),
+                List.of("flightNumber: " + exception.getMessage())
         );
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
@@ -33,11 +34,12 @@ public class GlobalExceptionHandler {
             NotEnoughSeatsException exception,
             HttpServletRequest request
     ) {
-        ErrorResponse response = ErrorResponse.of(
+        ErrorResponse response = ErrorResponse.withDetails(
                 HttpStatus.CONFLICT.value(),
                 HttpStatus.CONFLICT.getReasonPhrase(),
                 exception.getMessage(),
-                request.getRequestURI()
+                request.getRequestURI(),
+                List.of("seatCount: " + exception.getMessage())
         );
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
@@ -47,11 +49,12 @@ public class GlobalExceptionHandler {
             DuplicatePassengerEmailException exception,
             HttpServletRequest request
     ) {
-        ErrorResponse response = ErrorResponse.of(
+        ErrorResponse response = ErrorResponse.withDetails(
                 HttpStatus.BAD_REQUEST.value(),
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
                 exception.getMessage(),
-                request.getRequestURI()
+                request.getRequestURI(),
+                List.of("passengerEmail: " + exception.getMessage())
         );
         return ResponseEntity.badRequest().body(response);
     }
@@ -82,11 +85,12 @@ public class GlobalExceptionHandler {
             HttpMessageNotReadableException exception,
             HttpServletRequest request
     ) {
-        ErrorResponse response = ErrorResponse.of(
+        ErrorResponse response = ErrorResponse.withDetails(
                 HttpStatus.BAD_REQUEST.value(),
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
                 "Request body is missing or malformed",
-                request.getRequestURI()
+                request.getRequestURI(),
+                List.of("requestBody: Request body is missing or malformed")
         );
         return ResponseEntity.badRequest().body(response);
     }
