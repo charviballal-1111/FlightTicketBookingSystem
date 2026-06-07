@@ -73,6 +73,21 @@ curl -X POST http://localhost:8080/bookings \
 
 This returns `409 Conflict` because there are not enough seats.
 
+Try booking a flight that does not exist:
+
+```bash
+curl -X POST http://localhost:8080/bookings \
+  -H "Content-Type: application/json" \
+  -d '{
+    "flightNumber": "ZZ999",
+    "passengerName": "Asha Rao",
+    "passengerEmail": "asha-new@example.com",
+    "seatCount": 1
+  }'
+```
+
+This returns `404 Not Found` because `ZZ999` is not one of the available flights.
+
 ## What I Would Improve With More Time
 
 - Store flights and bookings in a real database so data is not lost after restarting the app.
