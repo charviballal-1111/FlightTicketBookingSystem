@@ -1,22 +1,26 @@
 # Flight Booking API
 
-A small Spring Boot REST API for booking seats on known flights. The app uses in-memory storage only and seeds a few flights when it starts.
+A small Spring Boot service for booking seats on available flights. The data is stored in memory, so bookings reset when the app restarts.
 
-## Run The App
+## How To Run
 
 ```bash
 mvn spring-boot:run
 ```
 
-The API starts on `http://localhost:8080`.
+The service runs at:
 
-## Run Tests
+```text
+http://localhost:8080
+```
+
+To run tests:
 
 ```bash
 mvn test
 ```
 
-## Seeded Flights
+## Available Flights
 
 | Flight number | Capacity |
 | --- | ---: |
@@ -24,76 +28,56 @@ mvn test
 | `BA202` | 8 |
 | `UA303` | 12 |
 
-## Book Seats
+## Example Requests
 
-`POST /bookings`
+Book seats:
 
-Request:
-
-```json
-{
-  "flightNumber": "AI101",
-  "passengerName": "Asha Rao",
-  "passengerEmail": "asha@example.com",
-  "seatCount": 2
-}
+```bash
+curl -X POST http://localhost:8080/bookings \
+  -H "Content-Type: application/json" \
+  -d '{
+    "flightNumber": "AI101",
+    "passengerName": "Asha Rao",
+    "passengerEmail": "asha@example.com",
+    "seatCount": 2
+  }'
 ```
 
-Successful response: `201 Created`
+Try booking again with the same email:
 
-```json
-{
-  "bookingReference": "3dfb9d01-9e37-4a29-ae28-5a91f0f9b048",
-  "flightNumber": "AI101",
-  "passengerName": "Asha Rao",
-  "passengerEmail": "asha@example.com",
-  "seatsBooked": 2,
-  "remainingSeats": 2,
-  "confirmedAt": "2026-06-07T08:00:00Z"
-}
+```bash
+curl -X POST http://localhost:8080/bookings \
+  -H "Content-Type: application/json" \
+  -d '{
+    "flightNumber": "AI101",
+    "passengerName": "Asha Rao",
+    "passengerEmail": "asha@example.com",
+    "seatCount": 1
+  }'
 ```
 
-Unknown flight response: `404 Not Found`
+This returns `400 Bad Request` because the same passenger email cannot book twice.
 
-```json
-{
-  "timestamp": "2026-06-07T08:00:00Z",
-  "status": 404,
-  "error": "Not Found",
-  "message": "Flight ZZ999 does not exist",
-  "path": "/bookings",
-  "details": [
-    "flightNumber: Flight ZZ999 does not exist"
-  ]
-}
+Try booking more seats than available:
+
+```bash
+curl -X POST http://localhost:8080/bookings \
+  -H "Content-Type: application/json" \
+  -d '{
+    "flightNumber": "BA202",
+    "passengerName": "Bram Hill",
+    "passengerEmail": "bram@example.com",
+    "seatCount": 20
+  }'
 ```
 
-Not enough seats response: `409 Conflict`
+This returns `409 Conflict` because there are not enough seats.
 
-```json
-{
-  "timestamp": "2026-06-07T08:00:00Z",
-  "status": 409,
-  "error": "Conflict",
-  "message": "Flight AI101 has only 1 seat remaining; requested 2 seats",
-  "path": "/bookings",
-  "details": [
-    "seatCount: Flight AI101 has only 1 seat remaining; requested 2 seats"
-  ]
-}
-```
+## What I Would Improve With More Time
 
-Duplicate passenger email response: `400 Bad Request`
-
-```json
-{
-  "timestamp": "2026-06-07T08:00:00Z",
-  "status": 400,
-  "error": "Bad Request",
-  "message": "Passenger with email asha@example.com already has a booking",
-  "path": "/bookings",
-  "details": [
-    "passengerEmail: Passenger with email asha@example.com already has a booking"
-  ]
-}
-```
+- Store flights and bookings in a real database so data is not lost after restarting the app.
+- Add login or user accounts so bookings are tied to real users, not only email addresses.
+- Add a booking cancellation option so seats can be released if someone changes their plan.
+- Add retry protection using an idempotency key, so a slow network retry does not accidentally create another booking.
+- Add clearer API documentation, such as Swagger, so anyone can test the endpoints in a browser.
+- Add more real-world checks, like validating flight dates, passenger details, and seat limits per person.
